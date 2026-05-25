@@ -1835,3 +1835,169 @@ func TestSeries_Slice(t *testing.T) {
 		}
 	}
 }
+
+func TestSeries_PctChange(t *testing.T) {
+	tests := []struct {
+		name     string
+		series   Series
+		period   int
+		expected Series
+	}{
+		{
+			"period_1_float",
+			Floats([]float64{100, 110, 121, 133.1}),
+			1,
+			Floats([]float64{math.NaN(), 0.1, 0.1, 0.1}),
+		},
+		{
+			"period_2_float",
+			Floats([]float64{100, 110, 121, 133.1}),
+			2,
+			Floats([]float64{math.NaN(), math.NaN(), 0.21, 0.21}),
+		},
+		{
+			"period_1_int",
+			Ints([]int{10, 20, 25, 20}),
+			1,
+			Floats([]float64{math.NaN(), 1.0, 0.25, -0.2}),
+		},
+		{
+			"period_0_default_to_1",
+			Floats([]float64{100, 110}),
+			0,
+			Floats([]float64{math.NaN(), 0.1}),
+		},
+		{
+			"period_larger_than_len",
+			Floats([]float64{100, 110}),
+			5,
+			Floats([]float64{math.NaN(), math.NaN()}),
+		},
+		{
+			"empty_series",
+			Floats([]float64{}),
+			1,
+			Floats([]float64{}),
+		},
+		{
+			"with_nan",
+			Floats([]float64{100, math.NaN(), 200}),
+			1,
+			Floats([]float64{math.NaN(), math.NaN(), math.NaN()}),
+		},
+		{
+			"series_with_err",
+			Series{Err: fmt.Errorf("test error")},
+			1,
+			Series{Err: fmt.Errorf("test error")},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			received := tc.series.PctChange(tc.period)
+
+			if tc.expected.Err != nil {
+				if received.Err == nil || received.Err.Error() != tc.expected.Err.Error() {
+					t.Errorf("Expected error:\n%v\nReceived:\n%v", tc.expected.Err, received.Err)
+				}
+				return
+			}
+
+			if received.Len() != tc.expected.Len() {
+				t.Fatalf("Expected length %d, got %d", tc.expected.Len(), received.Len())
+			}
+
+			for i := 0; i < received.Len(); i++ {
+				if strings.Compare(tc.expected.Elem(i).String(),
+					received.Elem(i).String()) != 0 {
+					t.Errorf("Index %d:\nExpected:\n%v\nReceived:\n%v", i, tc.expected, received)
+					break
+				}
+			}
+		})
+	}
+}
+
+func TestSeries_Diff(t *testing.T) {
+	tests := []struct {
+		name     string
+		series   Series
+		period   int
+		expected Series
+	}{
+		{
+			"period_1_float",
+			Floats([]float64{100, 110, 121, 133.1}),
+			1,
+			Floats([]float64{math.NaN(), 10, 11, 12.1}),
+		},
+		{
+			"period_2_float",
+			Floats([]float64{100, 110, 121, 133.1}),
+			2,
+			Floats([]float64{math.NaN(), math.NaN(), 21, 23.1}),
+		},
+		{
+			"period_1_int",
+			Ints([]int{10, 20, 25, 20}),
+			1,
+			Floats([]float64{math.NaN(), 10, 5, -5}),
+		},
+		{
+			"period_0_default_to_1",
+			Floats([]float64{100, 110}),
+			0,
+			Floats([]float64{math.NaN(), 10}),
+		},
+		{
+			"period_larger_than_len",
+			Floats([]float64{100, 110}),
+			5,
+			Floats([]float64{math.NaN(), math.NaN()}),
+		},
+		{
+			"empty_series",
+			Floats([]float64{}),
+			1,
+			Floats([]float64{}),
+		},
+		{
+			"with_nan",
+			Floats([]float64{100, math.NaN(), 200}),
+			1,
+			Floats([]float64{math.NaN(), math.NaN(), math.NaN()}),
+		},
+		{
+			"series_with_err",
+			Series{Err: fmt.Errorf("test error")},
+			1,
+			Series{Err: fmt.Errorf("test error")},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			received := tc.series.Diff(tc.period)
+
+			if tc.expected.Err != nil {
+				if received.Err == nil || received.Err.Error() != tc.expected.Err.Error() {
+					t.Errorf("Expected error:\n%v\nReceived:\n%v", tc.expected.Err, received.Err)
+				}
+				return
+			}
+
+			if received.Len() != tc.expected.Len() {
+				t.Fatalf("Expected length %d, got %d", tc.expected.Len(), received.Len())
+			}
+
+			for i := 0; i < received.Len(); i++ {
+				if strings.Compare(tc.expected.Elem(i).String(),
+					received.Elem(i).String()) != 0 {
+					t.Errorf("Index %d:\nExpected:\n%v\nReceived:\n%v", i, tc.expected, received)
+					break
+				}
+			}
+		})
+	}
+}

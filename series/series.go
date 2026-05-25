@@ -840,3 +840,69 @@ func (s Series) Slice(j, k int) Series {
 
 	return s.Subset(idxs)
 }
+
+// PctChange computes the percentage change between consecutive elements
+// over the given period. The result is a Float Series where:
+//
+//	result[i] = (s[i] - s[i-period]) / s[i-period]
+//
+// The first `period` elements are set to NaN. If either the current or
+// the previous element is NaN, the result is also NaN.
+func (s Series) PctChange(period int) Series {
+	if s.Err != nil {
+		return s
+	}
+	if period < 1 {
+		period = 1
+	}
+	floats := s.Float()
+	n := len(floats)
+	result := make([]float64, n)
+	for i := 0; i < n; i++ {
+		if i < period {
+			result[i] = math.NaN()
+		} else {
+			prev := floats[i-period]
+			curr := floats[i]
+			if math.IsNaN(prev) || math.IsNaN(curr) {
+				result[i] = math.NaN()
+			} else {
+				result[i] = (curr - prev) / prev
+			}
+		}
+	}
+	return New(result, Float, s.Name)
+}
+
+// Diff computes the difference between consecutive elements over the
+// given period. The result is a Float Series where:
+//
+//	result[i] = s[i] - s[i-period]
+//
+// The first `period` elements are set to NaN. If either the current or
+// the previous element is NaN, the result is also NaN.
+func (s Series) Diff(period int) Series {
+	if s.Err != nil {
+		return s
+	}
+	if period < 1 {
+		period = 1
+	}
+	floats := s.Float()
+	n := len(floats)
+	result := make([]float64, n)
+	for i := 0; i < n; i++ {
+		if i < period {
+			result[i] = math.NaN()
+		} else {
+			prev := floats[i-period]
+			curr := floats[i]
+			if math.IsNaN(prev) || math.IsNaN(curr) {
+				result[i] = math.NaN()
+			} else {
+				result[i] = curr - prev
+			}
+		}
+	}
+	return New(result, Float, s.Name)
+}
